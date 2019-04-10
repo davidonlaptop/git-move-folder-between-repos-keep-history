@@ -3,15 +3,13 @@
 # Copy a folder from one git repo to another git repo,
 # preserving full history of the folder.
 
+# TODO: add documentation
+# TODO: import multiple branches
 # TODO: test rename
-# TODO: test import subfolder
-# TODO
 # CAVEAT: only imports one branch from remote repository
 
 
 #//merge_repos_with_history git@gonebig.com:dlauzon/simplerepo2.git git@gonebig.com:dlauzon/simplerepo1.git
-#    local DST_GIT_URL="git@gonebig.com:dlauzon/cme-doc.git";
-#    local SRC_GIT_URL="git@gonebig.com:dlauzon/entitlementpoc.git";
 
 MERGE_WORKING_DIR="$HOME/gitimport";
 
@@ -33,7 +31,7 @@ cd "$MERGE_WORKING_DIR" && git clone "$DST_GIT_URL";
 # Skip first param, as it used for the destination repository
 shift
 
-#export MERGE_BRANCH_ORDER=()
+export MERGE_BRANCH_ORDER=""
 
 for SRC_GIT_URL in "$@"
 do
@@ -42,7 +40,7 @@ do
     SRC_GIT_REV="master";
     DST_GIT_BRANCH="MERGE_${SRC_GIT_BASENAME}";
 
-    #MERGE_BRANCH_ORDER+=("${DST_GIT_BRANCH}");
+    MERGE_BRANCH_ORDER="${MERGE_BRANCH_ORDER} ${DST_GIT_BRANCH}";
 
     echo -e "\n** Cloning source repository from $SRC_GIT_URL ...";
     cd "$MERGE_WORKING_DIR" && git clone "$SRC_GIT_URL";
@@ -60,13 +58,4 @@ echo "git push origin '*:*'"
 echo "git push origin --all"
 echo "git push origin --tags"
 
-#echo -e "\n** FYI. Either just merge the last branch, or merge in this order: $MERGE_BRANCH_ORDER"
-echo -ne "\n** FYI. Either just merge the last branch, or merge in this order: "
-for SRC_GIT_URL in "$@"
-do
-    SRC_GIT_BASENAME=$(basename ${SRC_GIT_URL%.*});
-    DST_GIT_BRANCH="MERGE_${SRC_GIT_BASENAME}";
-
-    echo -n " $DST_GIT_BRANCH"
-done
-echo " yay!"
+echo -e "\n** FYI. Either just merge the last branch, or merge in this order: $MERGE_BRANCH_ORDER"
