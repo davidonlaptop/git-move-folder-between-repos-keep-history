@@ -8,37 +8,65 @@
 # TODO
 # CAVEAT: only imports one branch from remote repository
 
-# import_another_git_with_history_to_subfolder
-import_folder_from_another_git_repo2(){
-    local _mergeworkingdir="$HOME/gitimport";
 
-    local _dst_git_url="$1";
-    local _dst_git_basename=$(basename ${_dst_git_url%.*});
-    local _dst_git_path="$_mergeworkingdir/$_dst_git_basename";
+#//merge_repos_with_history git@gonebig.com:dlauzon/simplerepo2.git git@gonebig.com:dlauzon/simplerepo1.git
+#    local DST_GIT_URL="git@gonebig.com:dlauzon/cme-doc.git";
+#    local SRC_GIT_URL="git@gonebig.com:dlauzon/entitlementpoc.git";
 
-    local _src_git_url="$2";
-    local _src_git_basename=$(basename ${_src_git_url%.*});
-    local _src_git_path="$_mergeworkingdir/$_src_git_basename";
-    local _src_git_rev="master";
-    local _dst_git_branch="MERGE_${_src_git_basename}";
+MERGE_WORKING_DIR="$HOME/gitimport";
 
-    echo -e "\n** Creating working directory for merge at $_mergeworkingdir";
-    mkdir -p "$_mergeworkingdir";
-
-    echo -e "\n** Cloning source repository from $_src_git_url ...";
-    cd "$_mergeworkingdir" && git clone "$_src_git_url";
-
-    echo -e "\n** Cloning destination repository from $_dst_git_url ...";
-    cd "$_mergeworkingdir" && git clone "$_dst_git_url" && cd "$_dst_git_path";
-
-# TODO: create branch only if it doesn't exist
-
-    echo -e "\n** Importing history from source repository into subfolder '$_src_git_basename' of branch $_dst_git_branch";
-    git checkout -b "$_dst_git_branch" && git subtree add -P "$_src_git_basename" "$_src_git_path" "$_src_git_rev";
-}
+DST_GIT_URL="$1";
+DST_GIT_BASENAME=$(basename ${DST_GIT_URL%.*});
+DST_GIT_PATH="$MERGE_WORKING_DIR/$DST_GIT_BASENAME";
 
 
-import_folder_from_another_git_repo2 git@gonebig.com:dlauzon/simplerepo2.git git@gonebig.com:dlauzon/simplerepo1.git
-#undo_import_folder_from_another_git_repo
-#    local _dst_git_url="git@gonebig.com:dlauzon/cme-doc.git";
-#    local _src_git_url="git@gonebig.com:dlauzon/entitlementpoc.git";
+# Cleanup
+echo "Cleaning up..." && rm -rf $MERGE_WORKING_DIR/*
+
+
+echo -e "\n** Creating working directory for merge at $MERGE_WORKING_DIR";
+mkdir -p "$MERGE_WORKING_DIR";
+
+echo -e "\n** Cloning destination repository from $DST_GIT_URL ...";
+cd "$MERGE_WORKING_DIR" && git clone "$DST_GIT_URL";
+
+# Skip first param, as it used for the destination repository
+shift
+
+#export MERGE_BRANCH_ORDER=()
+
+for SRC_GIT_URL in "$@"
+do
+    SRC_GIT_BASENAME=$(basename ${SRC_GIT_URL%.*});
+    SRC_GIT_PATH="$MERGE_WORKING_DIR/$SRC_GIT_BASENAME";
+    SRC_GIT_REV="master";
+    DST_GIT_BRANCH="MERGE_${SRC_GIT_BASENAME}";
+
+    #MERGE_BRANCH_ORDER+=("${DST_GIT_BRANCH}");
+
+    echo -e "\n** Cloning source repository from $SRC_GIT_URL ...";
+    cd "$MERGE_WORKING_DIR" && git clone "$SRC_GIT_URL";
+
+    # TODO: create branch only if it doesn't exist
+
+    echo -e "\n** Importing history from source repository into subfolder '$SRC_GIT_BASENAME' of branch $DST_GIT_BRANCH";
+    cd "$DST_GIT_PATH" &&
+    git checkout -b "$DST_GIT_BRANCH" &&
+    git subtree add -P "$SRC_GIT_BASENAME" "$SRC_GIT_PATH" "$SRC_GIT_REV";
+done
+
+echo -e "\n** Well done! to push all your branches to $DST_GIT_URL do:"
+echo "git push origin '*:*'"
+echo "git push origin --all"
+echo "git push origin --tags"
+
+#echo -e "\n** FYI. Either just merge the last branch, or merge in this order: $MERGE_BRANCH_ORDER"
+echo -ne "\n** FYI. Either just merge the last branch, or merge in this order: "
+for SRC_GIT_URL in "$@"
+do
+    SRC_GIT_BASENAME=$(basename ${SRC_GIT_URL%.*});
+    DST_GIT_BRANCH="MERGE_${SRC_GIT_BASENAME}";
+
+    echo -n " $DST_GIT_BRANCH"
+done
+echo " yay!"
